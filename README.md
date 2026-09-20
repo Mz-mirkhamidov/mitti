@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mitti
 
-## Getting Started
+Bog'chalar uchun kunlik yo'qlama tizimi. To'liq spetsifikatsiya: [`TZ.md`](./TZ.md), agent uchun qisqa qoidalar: [`AGENTS.md`](./AGENTS.md).
 
-First, run the development server:
+## O'rnatish
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local   # va qiymatlarni to'ldiring
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Kerakli o'zgaruvchilar (`.env.local`):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| O'zgaruvchi | Qayerdan olinadi |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase loyihasi → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → `service_role` (**maxfiy**, faqat serverda) |
+| `TELEGRAM_BOT_TOKEN` | BotFather |
+| `TELEGRAM_BOT_USERNAME` | BotFather bergan nom, `@`siz |
+| `TELEGRAM_WEBHOOK_SECRET`, `CRON_SECRET` | o'zingiz tasodifiy yarating (`openssl rand -hex 24`) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Ma'lumotlar bazasi
 
-## Learn More
+Migratsiyalar `supabase/migrations/` da, tartib bilan qo'llanadi:
 
-To learn more about Next.js, take a look at the following resources:
+1. `0001_init.sql` — asosiy sxema, RLS, storage siyosatlari
+2. `0002_subsidy.sql` — "davlatdan kelgan summa"ni saqlash (TZ §8)
+3. `0003_kindergarten_write.sql` — rahbarga bog'cha nomini o'zgartirish ruxsati
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Supabase SQL Editor orqali yoki `supabase db push` bilan qo'llang.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Boshlang'ich ma'lumot
 
-## Deploy on Vercel
+```bash
+pnpm seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1 bog'cha + 1 rahbar (`+998901234567` / `sinov1234`) + 1 tarbiyachi
+(`+998901234568` / `sinov1234`) + 1 guruh + 16 bola yaratadi.
+`SUPABASE_SERVICE_ROLE_KEY` kerak.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Telegram bot
+
+Webhook o'rnatish (bot tokeni va o'zingizning domeningiz bilan):
+
+```bash
+curl -X POST "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://<domen>/api/telegram/webhook","secret_token":"<TELEGRAM_WEBHOOK_SECRET>"}'
+```
+
+## Ishga tushirish
+
+```bash
+pnpm dev      # http://localhost:3000
+pnpm build    # production tekshiruv
+```
+
+## Cron
+
+`vercel.json`da uchta vazifa bor (barchasi Asia/Tashkent bo'yicha):
+
+- 08:30 — oshxona porsiya hisoboti
+- 13:05 — ota-onalarga tushlik xabari
+- Juma 17:00 — haftalik jamlanma
+
+Vercel'ning o'z cron mexanizmi `CRON_SECRET` bilan avtomatik ishlaydi.
+Agar tarif yetmasa, [cron-job.org](https://cron-job.org) dan
+`Authorization: Bearer <CRON_SECRET>` sarlavhasi bilan chaqiring.
