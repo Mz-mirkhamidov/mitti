@@ -28,9 +28,7 @@ export default function LoginPage() {
       setLoading(false);
       // Supabase's own message is in English and mentions "email" — never
       // shown to a user who only ever typed a phone number.
-      // TEMP DEBUG: raw message appended below while diagnosing a login
-      // issue on the seeded test accounts — remove before real users log in.
-      setError(`Telefon raqami yoki parol noto'g'ri. [debug: ${signInError.message}]`);
+      setError("Telefon raqami yoki parol noto'g'ri.");
       return;
     }
 
